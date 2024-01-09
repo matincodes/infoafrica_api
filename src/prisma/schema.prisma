@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "sqlserver"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+model Companies {
+  id          Int    @id @default(autoincrement())
+  country     String @db.NVarChar(Max)
+  name        String @db.NVarChar(Max)
+  address     String @db.NVarChar(Max)
+  sector      String @db.NVarChar(Max)
+  website     String @db.NVarChar(Max)
+  email       String @db.NVarChar(Max)
+  phoneNumber String @db.NVarChar(Max)
+}
+
+model Resources {
+  id                 Int                  @id @default(autoincrement())
+  name               String               @db.NVarChar(Max)
+  country            String               @db.NVarChar(Max)
+  resourceLocations  ResourceLocations[]
+  miningCompanies    MiningCompanies[]
+  governmentAgencies GovernmentAgencies[]
+}
+
+model ResourceLocations {
+  id          Int       @id @default(autoincrement())
+  location    String    @db.NVarChar(Max)
+  resources   Resources @relation(fields: [resourcesId], references: [id], onDelete: Cascade)
+  resourcesId Int
+}
+
+model MiningCompanies {
+  id          Int       @id @default(autoincrement())
+  company     String    @db.NVarChar(Max)
+  resources   Resources @relation(fields: [resourcesId], references: [id], onDelete: Cascade)
+  resourcesId Int
+}
+
+model GovernmentAgencies {
+  id          Int       @id @default(autoincrement())
+  agency      String    @db.NVarChar(Max)
+  resources   Resources @relation(fields: [resourcesId], references: [id], onDelete: Cascade)
+  resourcesId Int
+}
