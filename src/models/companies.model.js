@@ -31,24 +31,41 @@ async function getAllCompaniesByCountry(country) {
   return companies
 }
 
-async function addCompanies(companies) {
-  const newCompanies = await prisma.companies.createMany({
-    data: companies.map(company => ({
-      ...company,
-      country: company.country.toLowerCase(),
-    })),
+async function getAllCompaniesByUser(user) {
+  const companies = await prisma.companies.findMany({
+    where: {
+      user: {
+        is: {
+          id: user.id,
+        },
+      },
+    },
   })
+
+  return companies
 }
 
-async function updateCompanies(id, company) {
+async function addCompanies(companies, user) {
+  const newCompanies = await prisma.companies.create({
+    data: {
+      ...companies[0],
+      user: {
+        connect: {
+          id: user.id,
+        },
+      },
+    }
+  })
+
+  return newCompanies
+}
+
+async function updateCompany(id, company) {
   const updatedCompany = await prisma.companies.update({
     where: {
       id: parseInt(id),
     },
-    data: {
-      ...company,
-      country: company.country.toLowerCase(),
-    },
+    data: company,
   })
 
   return updatedCompany
@@ -67,7 +84,8 @@ async function deleteCompany(id) {
 module.exports = {
   getAllCompanies,
   getAllCompaniesByCountry,
+  getAllCompaniesByUser,
   addCompanies,
-  updateCompanies,
+  updateCompany,
   deleteCompany,
 }

@@ -1,8 +1,9 @@
 const {
   getAllCompanies,
   getAllCompaniesByCountry,
+  getAllCompaniesByUser,
   addCompanies,
-  updateCompanies,
+  updateCompany,
   deleteCompany,
 } = require('../../models/companies.model')
 
@@ -12,7 +13,7 @@ async function httpGetAllCompanies(req, res) {
 
     return res.json(companies)
   } catch (error) {
-    return res.status(400).json({ error: error.message })
+    return res.status(500).json({ error: 'Internal server error' })
   }
 }
 
@@ -27,41 +28,82 @@ async function httpGetAllCompaniesByCountry(req, res) {
 
     return res.json(companies)
   } catch (error) {
-    return res.status(400).json({ error: error.message })
+    return res.status(500).json({ error: 'Internal server error' })
+  }
+}
+
+async function httpGetAllCompaniesByUser(req, res) {
+  const user = req.user
+
+  if (!country || !username)
+    return res
+      .status(400)
+      .json({ error: 'No country or username sent to get companies' })
+
+  try {
+    const companies = await getAllCompaniesByUser(user)
+
+    return res.json(companies)
+  } catch (error) {
+    return res.status(500).json({ error: 'Internal server error' })
   }
 }
 
 async function httpAddCompanies(req, res) {
+  const user = req.user
+  
   if (!req.body)
     return res.status(400).json({ error: 'No company sent to add' })
 
-  try {
-    const newCompany = await addCompanies(
-      Array.isArray(req.body) ? req.body : [req.body],
-    )
+  const companies = Array.isArray(req.body) ? req.body : [req.body]
 
-    return res.status(201).json('Added companies')
+  for (const company of companies) {
+    if (
+      !company.country ||
+      !company.name ||
+      !company.email ||
+      !company.phoneNumber ||
+      !company.address ||
+      !company.sector ||
+      !company.website
+    )
+      return res.status(400).json({ error: 'Missing required fields' })
+  
+  }
+
+  companies.map(company => (company.country = company.country.toLowerCase()))
+
+  try {
+    await addCompanies(companies, user)
+
+    return res.status(201).json({ msg: 'Added companies' })
   } catch (error) {
-    return res.status(400).json({ error: error.message })
+    return res.status(500).json({ error: 'Internal server error' })
   }
 }
 
-async function httpUpdateCompanies(req, res) {
+async function httpUpdateCompany(req, res) {
   const { id } = req.params
+
   if (!req.body || !id)
     return res.status(400).json({ error: 'No company sent to update' })
 
-  try {
-    const company = await updateCompanies(id, req.body)
+  const company = req.body
 
-    return res.json(company)
+  if (company.country) company.country = company.country.toLowerCase()
+
+  try {
+    const updatedCompany = await updateCompany(id, company)
+
+    return res.json(updatedCompany)
   } catch (error) {
-    return res.status(400).json({ error: error.message })
+    return res.status(500).json({ error: error.message })
   }
 }
 
 async function httpDeleteCompany(req, res) {
   const { id } = req.params
+
   if (!id) return res.status(400).json({ error: 'No company sent to delete' })
 
   try {
@@ -69,14 +111,15 @@ async function httpDeleteCompany(req, res) {
 
     return res.json(company)
   } catch (error) {
-    return res.status(400).json({ error: error.message })
+    return res.status(500).json({ error: 'Internal server error' })
   }
 }
 
 module.exports = {
   httpGetAllCompanies,
   httpGetAllCompaniesByCountry,
+  httpGetAllCompaniesByUser,
   httpAddCompanies,
-  httpUpdateCompanies,
+  httpUpdateCompany,
   httpDeleteCompany,
 }

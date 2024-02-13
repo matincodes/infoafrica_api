@@ -39,11 +39,35 @@ async function getAllResourcesByCountry(country) {
   return resources
 }
 
-async function addResources(resource) {
+async function getAllResourcesByUser(user) {
+  const resources = await prisma.resources.findMany({
+    where: {
+      user: {
+        is: {
+          id: user.id,
+        },
+      },
+    },
+    include: {
+      resourceLocations: true,
+      miningCompanies: true,
+      governmentAgencies: true,
+    },
+  })
+
+  return resources
+}
+
+async function addResources(resource, user) {
   const newResources = await prisma.resources.create({
     data: {
       name: resource.name,
       country: resource.country.toLowerCase(),
+      user: {
+        connect: {
+          id: user.id,
+        },
+      },
       resourceLocations: {
         createMany: {
           data: resource.resourceLocations.map(location => ({
@@ -83,8 +107,7 @@ async function updateResources(id, resource) {
       id: parseInt(id),
     },
     data: {
-      ...resource,
-      country: resource.country.toLowerCase(),
+      resource,
     },
     include: {
       resourceLocations: true,
@@ -108,6 +131,7 @@ async function deleteResource(id) {
 module.exports = {
   getAllResources,
   getAllResourcesByCountry,
+  getAllResourcesByUser,
   addResources,
   updateResources,
   deleteResource,
